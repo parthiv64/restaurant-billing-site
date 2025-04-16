@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Restaurant Billing System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #d35400;
+        }
+
+        section {
+            margin-top: 30px;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        input, select, button {
+            padding: 8px;
+            margin-top: 5px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        button {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        button:hover {
+            background-color: #219150;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+
+        .totals {
+            margin-top: 20px;
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .confirmation {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f6e3;
+            border: 1px solid #a3d5a1;
+            border-radius: 8px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍽️ Restaurant Billing System</h1>
+
+        <section class="user-info">
+            <h2>User Info</h2>
+            <label for="username">Your Name:</label>
+            <input type="text" id="username" placeholder="Enter your name">
+
+            <label for="address">Delivery Address:</label>
+            <input type="text" id="address" placeholder="Enter delivery address">
+
+            <label for="phone">Phone Number:</label>
+            <input type="text" id="phone" placeholder="Enter phone number">
+        </section>
+
+        <section class="menu">
+            <h2>Menu</h2>
+            <div id="menu-items">
+                <!-- Menu items dynamically inserted -->
+            </div>
+        </section>
+
+        <section class="order">
+            <h2>Place Order</h2>
+            <label for="item">Select Item:</label>
+            <select id="item"></select>
+
+            <label for="quantity">Quantity:</label>
+            <input type="number" id="quantity" min="1" value="1">
+
+            <button onclick="addToOrder()">Add to Order</button>
+        </section>
+
+        <section class="summary">
+            <h2>Order Summary</h2>
+            <table id="order-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Price</th>
+                        <th>Qty</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+
+            <label for="coupon">Coupon Code:</label>
+            <input type="text" id="coupon" placeholder="Enter coupon code">
+
+            <button onclick="calculateTotal()">Calculate Bill</button>
+
+            <div class="totals">
+                <p id="subtotal">Subtotal: $0.00</p>
+                <p id="tax">Tax (5%): $0.00</p>
+                <p id="discount">Discount: $0.00</p>
+                <h3 id="grand-total">Grand Total: $0.00</h3>
+            </div>
+
+            <button onclick="placeOrder()">Place Order</button>
+
+            <div class="confirmation" id="confirmation"></div>
+        </section>
+    </div>
+
+    <script>
+        const menu = {
+            "Burger": 189.00,
+            "Fries": 129.00,
+            "Soda": 89.00,
+            "Sandwich": 149.00,
+            "Chicken Nuggets": 229.00,
+            "Fried Chicken 6 pcs": 359.00,
+            "Choco lava cake": 119.00,
+            "Popcorn": 199.00,
+            "Biryani": 249.00,
+            "Ice Cream": 219.00
+        };
+
+        const coupons = {
+            "NEWUSER": 0.40,
+            "20OFF": 0.20,
+            "BULKORDER": 0.15
+        };
+
+        let order = [];
+
+        window.onload = function() {
+            const menuDiv = document.getElementById("menu-items");
+            const itemSelect = document.getElementById("item");
+
+            for (let item in menu) {
+                let p = document.createElement("p");
+                p.textContent = `${item} - $${menu[item].toFixed(2)}`;
+                menuDiv.appendChild(p);
+
+                let option = document.createElement("option");
+                option.value = item;
+                option.textContent = item;
+                itemSelect.appendChild(option);
+            }
+        };
+
+        function addToOrder() {
+            const item = document.getElementById("item").value;
+            const qty = parseInt(document.getElementById("quantity").value);
+            if (isNaN(qty) || qty <= 0) {
+                alert("Please enter a valid quantity.");
+                return;
+            }
+
+            const price = menu[item];
+            const total = price * qty;
+            order.push({ item, price, qty, total });
+
+            const tbody = document.querySelector("#order-table tbody");
+            const row = tbody.insertRow();
+            row.innerHTML = `<td>${item}</td><td>$${price.toFixed(2)}</td><td>${qty}</td><td>$${total.toFixed(2)}</td>`;
+        }
+
+        function calculateTotal() {
+            let subtotal = order.reduce((sum, item) => sum + item.total, 0);
+            let tax = subtotal * 0.05;
+
+            const couponInput = document.getElementById("coupon").value.trim().toUpperCase();
+            const discountRate = coupons[couponInput] || 0;
+            const discount = subtotal * discountRate;
+
+            const grandTotal = subtotal + tax - discount;
+
+            document.getElementById("subtotal").textContent = `Subtotal: $${subtotal.toFixed(2)}`;
+            document.getElementById("tax").textContent = `Tax (5%): $${tax.toFixed(2)}`;
+            document.getElementById("discount").textContent = `Discount: $${discount.toFixed(2)}`;
+            document.getElementById("grand-total").textContent = `Grand Total: $${grandTotal.toFixed(2)}`;
+
+            if (discountRate === 0 && couponInput !== "") {
+                alert("Invalid Coupon Code");
+            }
+        }
+
+        function placeOrder() {
+            const name = document.getElementById("username").value.trim();
+            const address = document.getElementById("address").value.trim();
+            const phone = document.getElementById("phone").value.trim();
+
+            if (!name || !address || !phone || order.length === 0) {
+                alert("Please complete all user info and add items to your order.");
+                return;
+            }
+
+            const deliveryTime = Math.floor(Math.random() * 20) + 20; // random 20–40 minutes
+
+            const confirmation = document.getElementById("confirmation");
+            confirmation.style.display = "block";
+            confirmation.innerHTML = `
+                <h3>Thank you, ${name}!</h3>
+                <p>Your order is on the way to <strong>${address}</strong>.</p>
+                <p>We will contact you at <strong>${phone}</strong>.</p>
+                <p>Estimated delivery time: <strong>${deliveryTime} minutes</strong>.</p>
+                <p>Total Items Ordered: ${order.length}</p>
+            `;
+        }
+    </script>
+</body>
+</html>
